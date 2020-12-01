@@ -1,16 +1,15 @@
 # AVSS
 
-This is the repository for the Airbonrne Virus Sanitation System application created for ECE4655  (Digital Image Processing). It contains Python Code as well as ____ code which ________________
+This is the repository for the Airbonrne Virus Sanitation System application created for ECE4655  (Digital Image Processing). It contains Python Code and will eventually contain the object classifier model which the Google TensorFlow machine learning framework will utilize to send signals to the GPIO of our NVIDIA Jetson Nano Microprocessor.
 
 ## Functionality and Usage
-
-Insert more info `here`.
+Functionality for this project and installation instructions will be located in this section of the README when complete.
 
 ```python
 # Insert the most relevant code here.
 ```
 
-Insert another comment here to make it look professional.
+Another section of important functionality and explaination will be located below.
 
 ```python
 # Second most relevant coding section here, and so on.
