@@ -26,6 +26,31 @@ def create_camera():
 
     # close the camera instance
     camera.release()
+    
+    
+    
+#function used to tell if there is a person or nit 
+def detectPerson(frame):
+
+    # initialize the HOG descriptor/person detector
+    hog = cv2.HOGDescriptor()
+    hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+
+    # detect people in the image
+    # returns the bounding boxes for the detected objects
+    boxes, weights = hog.detectMultiScale(frame, winStride=(8,8) )
+
+    boxes = np.array([[x, y, x + w, y + h] for (x, y, w, h) in boxes])
+
+    for (xA, yA, xB, yB) in boxes:
+        # display the detected boxes in the colour picture
+        cv2.rectangle(frame, (xA, yA), (xB, yB),
+                          (0, 255, 0), 2)
+
+    # Display the resulting frame
+    cv2.imshow('frame',frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        #program finished 
 
 def alarmFunction():
     outputPin = 6 # pin 38
