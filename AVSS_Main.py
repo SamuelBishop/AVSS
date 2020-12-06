@@ -10,7 +10,7 @@ import nanocamera as nano
 import cv2
 import numpy as np
 
-def create_camera():
+def run_camera():
 # Create the Camera instance
     camera = nano.Camera(camera_type=1, device_id=0, width=640, height=480, fps=30)
     print('USB Camera ready? - ', camera.isReady())
@@ -18,6 +18,14 @@ def create_camera():
         try:
             # read the camera image
             frame = camera.read()
+            #detect the person now
+            isPersonDetected = detectPerson(frame)
+
+            #fire the led
+            if isPersonDetected == True:
+                ledFunction(isPersonDetected)
+            else:
+                ledFunction(isPersonDetected)
             # display the frame
             cv2.imshow("Video Frame", frame)
             if cv2.waitKey(25) & 0xFF == ord('q'):
@@ -27,43 +35,34 @@ def create_camera():
 
     # close the camera instance
     camera.release()
-    
-    
-    
+
+
 
 #function used to tell if there is a person or nit
 def detectPerson(frame):
-
     # initialize the HOG descriptor/person detector
     hog = cv2.HOGDescriptor()
     hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-
     # detect people in the image
     # returns the bounding boxes for the detected objects
     boxes, weights = hog.detectMultiScale(frame, winStride=(8,8) )
-
     #if weights are bigger than 2 then we have a person
     print("Weights:", weights)
-
+    #check to see if we detected a person
     if len(weights) > 0:
-
         print("There is a person")
-
+        boxes = np.array([[x, y, x + w, y + h] for (x, y, w, h) in boxes])
+        #create the boxes
+        for (xA, yA, xB, yB) in boxes:
+            # display the detected boxes in the colour picture
+            cv2.rectangle(frame, (xA, yA), (xB, yB),
+                          (0, 255, 0), 2)
+        # Display the resulting frame
+        #cv2.imshow('frame', frame)
+        return True
     else:
         print("No Person")
-
-    boxes = np.array([[x, y, x + w, y + h] for (x, y, w, h) in boxes])
-
-    for (xA, yA, xB, yB) in boxes:
-        # display the detected boxes in the colour picture
-        cv2.rectangle(frame, (xA, yA), (xB, yB),
-                          (0, 255, 0), 2)
-
-    # Display the resulting frame
-    cv2.imshow('frame',frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        #program finished
-        print("Finished ")
+        return False
 
 def alarmFunction():
     outputPin = 6 # pin 38
@@ -116,6 +115,8 @@ if __name__ == '__main__':
     GPIO.setmode(GPIO.BCM)
     # set pin as an output pin with optional initial state of HIGH
     # GPIO.setup(output_pin, GPIO.OUT, initial=GPIO.HIGH)
+    #run the camera
+    run_camera()
 
     print("Starting demo now! Press CTRL+C to exit")
     # ledFunction()
