@@ -10,12 +10,6 @@ import time
 
 output_pin = 18  # BOARD pin 12, BCM pin 18
 
-# The function that does all of the image processing
-def magic(img):
-    finished = 1
-    # Process this image, set the relevant pin outputs, return finished
-    return finished
-
 if __name__ == '__main__':
     # Pin Setup:
     # Board pin-numbering scheme
@@ -35,5 +29,57 @@ if __name__ == '__main__':
     finally:
         GPIO.cleanup()
 
-    # imgFromVideoFeed = "I don't know at all what im doing"
-    # magic(imgFromVideoFeed)
+"""
+PSUEDOCODE:
+
+def main:
+    humanDetected = false
+    feed = DeepSteam(webcamInput) # Get michael to do this part and get the feed as a variable
+    humanDetected = tensorflow.process(feed) # Will return true if human in frame (hopefully tensorflow has built in functions)
+    
+    def rtPeriodicTask(humanDetected):
+        if humanDetected:
+            pthread taskThread
+            pthread_create taskThread
+            pthread_join(taskThread, deadLineTask)
+        schedule(500) # Repeat task every so often as needed
+        
+    # Creates threads for all jobs, joins threads for all jobs
+    def deadLineTask():
+        jobThread1 = dispatchChildThread()
+        jobThread2 = dispatchChildThread()
+        jobThread3 = dispatchChildThread()
+        pthread_join(jobThread1, alarmFunction)
+        pthread_join(jobThread2, ledFunction)
+        pthread_join(jobThread3, fanFunction)
+    
+    # Handles the alarm
+    def alarmFunction:
+        output_pin = 5 # change as necessary
+        deadline = 100 # in miliseconds
+        # ENSURE DEADLINE MET, IDK HOW TO DO THIS IN PYTHON
+        while(1):
+            if(shouldExit): # figure this out for python
+                exit();
+            GPIO.output(output_pin, GPIO.HIGH)
+            time.sleep(.1) # change as necessary
+            GPIO.output(output_pin, GPIO.LOW)
+            time.sleep(.1) # change as necessary
+        return 1
+        
+    # Handles the LED
+    def ledFunction:
+        output_pin = 6 # change as necessary
+        deadline = 200 # in miliseconds
+        # ENSURE DEADLINE MET, IDK HOW TO DO THIS IN PYTHON
+        GPIO.output(output_pin, GPIO.HIGH)
+        return 1
+        
+    # Handles the fan
+    def fanFunction:
+        output_pin = 7 # change as necessary
+        deadline = 200 # in miliseconds
+        # ENSURE DEADLINE MET, IDK HOW TO DO THIS IN PYTHON
+        GPIO.output(output_pin, GPIO.HIGH)
+        return 1
+"""
