@@ -32,6 +32,7 @@ def ledFunction():
     GreenPin = 9 # pin 21
     bluePin = 10 # pin 19
     buttonPin = 22  # pin 15
+    GPIO.setup(buttonPin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     buttonSetting = 0
     if( GPIO.input(buttonPin) ): # If button pressed - green
         # red condition
