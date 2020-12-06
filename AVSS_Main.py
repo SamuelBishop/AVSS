@@ -11,7 +11,7 @@ import cv2
 
 def create_camera():
 # Create the Camera instance
-    camera = nano.Camera(camera_type=0, device_id=1, width=640, height=480, fps=30)
+    camera = nano.Camera(camera_type=1, device_id=0, width=640, height=480, fps=30)
     print('USB Camera ready? - ', camera.isReady())
     while camera.isReady():
         try:
