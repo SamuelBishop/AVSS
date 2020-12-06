@@ -8,6 +8,7 @@ import Jetson.GPIO as GPIO
 import time
 import nanocamera as nano
 import cv2
+import numpy as np
 
 def create_camera():
 # Create the Camera instance
@@ -29,7 +30,8 @@ def create_camera():
     
     
     
-#function used to tell if there is a person or nit 
+
+#function used to tell if there is a person or nit
 def detectPerson(frame):
 
     # initialize the HOG descriptor/person detector
@@ -39,6 +41,16 @@ def detectPerson(frame):
     # detect people in the image
     # returns the bounding boxes for the detected objects
     boxes, weights = hog.detectMultiScale(frame, winStride=(8,8) )
+
+    #if weights are bigger than 2 then we have a person
+    print("Weights:", weights)
+
+    if len(weights) > 0:
+
+        print("There is a person")
+
+    else:
+        print("No Person")
 
     boxes = np.array([[x, y, x + w, y + h] for (x, y, w, h) in boxes])
 
@@ -50,7 +62,8 @@ def detectPerson(frame):
     # Display the resulting frame
     cv2.imshow('frame',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
-        #program finished 
+        #program finished
+        print("Finished ")
 
 def alarmFunction():
     outputPin = 6 # pin 38
