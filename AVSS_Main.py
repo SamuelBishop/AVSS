@@ -1,7 +1,6 @@
 """
-This project is going to be awesome. Need to research I/O in python for the jetson nano,
-also need to research tensorflow lite.
-So far all this does is toggle on and off an LED on pin 12
+    Project: AVSS (Airborne Virus Sanitation System)
+    Team: Jacob Alongi | Samuel Bishop | Michael Boeding
 """
 
 import Jetson.GPIO as GPIO
@@ -9,25 +8,38 @@ import time
 import nanocamera as nano
 import cv2
 import numpy as np
-
-# For RT_Task
 import queue
 import threading
-import trace
 
+# kill flag for threads
 exitFlag = 0
-deadline = 5 # 5 seconds
+# deadline for threads in seconds
+deadline = 5
+# time stamp for last person detected
 last_detected = 0
+# length of time to ignore detecting new people
 lpd_deadline = 5
-isPersonDetected = False
+
 alarmGoing = False
+# initial thread ID for threads
 threadID = 1
+# this is used to trigger threads, ignores detection by lpd_deadline time
+isPersonDetected = False
+# way to get actual real time detection of person
 real_time_detect_person = False
+
 redPin = 11  # pin 23
-GreenPin = 5  # pin 29
+greenPin = 5  # pin 29
 bluePin = 10  # pin 19
 
-# From RT_Task.py
+"""
+    process_data is called by thread object, run method is overrident to call this method
+    - when called checks if the kill thread is set to 1
+    - grabs task from the workQueue by name, and runs the coressponding method
+        Sanitation:
+        Led:
+        Alarm:
+"""
 def process_data(threadName, q):
     success = False
     while not exitFlag:
@@ -159,7 +171,7 @@ def ledFunction(red=0, green=0, blue=0):
 
     GPIO.output(redPin, GPIO.HIGH) if red else GPIO.output(redPin, GPIO.LOW)
 
-    GPIO.output(GreenPin, GPIO.HIGH) if green else GPIO.output(GreenPin, GPIO.LOW)
+    GPIO.output(greenPin, GPIO.HIGH) if green else GPIO.output(greenPin, GPIO.LOW)
 
     GPIO.output(bluePin, GPIO.HIGH) if blue else GPIO.output(bluePin, GPIO.LOW)
     return 1
