@@ -22,6 +22,7 @@ lpd_deadline = 5
 isPersonDetected = False
 alarmGoing = False
 threadID = 1
+real_time_detect_person = False
 
 # From RT_Task.py
 def process_data(threadName, q):
@@ -32,15 +33,21 @@ def process_data(threadName, q):
             data = q.get()
             queueLock.release()
             print("%s processing %s" % (threadName, data))
-            if data == "Sanitation":
+            # print(data[1])
+            if data[1] == "Sanitation":
                 fanFunction()
                 q.task_done()
-            elif data == "Led":
-                ledFunction(isPersonDetected)
+            elif data[1] == "Led":
+                print("LED STATEMENT")
+                if(real_time_detect_person):
+                    print("GREEN STATEMENT")
+                    ledGreenFunction()
+                else:
+                    print("RED STATEMENT")
+                    ledRedFunction()
                 q.task_done()
-            elif data == "Alarm":
+            elif data[1] == "Alarm":
                 alarmFunction()
-                print("This is where shit will go after testing of alarm function")
                 q.task_done()
         else:
             queueLock.release()
@@ -72,15 +79,18 @@ def run_camera():
             global isPersonDetected
             global lpd_deadline
             global last_detected
+            global real_time_detect_person
 
             if( detectPerson(frame) ):
                 time_now = time.time()
+                real_time_detect_person = True
                 if( time_now - last_detected > lpd_deadline):
                     last_detected = time_now
                     isPersonDetected = True
                 else:
                     isPersonDetected = False
-
+            else:
+                real_time_detect_person = False
             # display the frame
             cv2.imshow("Video Frame", frame)
             if cv2.waitKey(25) & 0xFF == ord('q'):
@@ -143,33 +153,23 @@ def alarmFunction():
     return 1
 
 # Handles the LED
-def ledFunction(isPerson):
-    # From left to right the inputs of RGB LED are R, Ground, G, B
-    redPin = 11 # pin 23
-    GPIO.setup(redPin, GPIO.OUT, initial=GPIO.LOW)
-    GreenPin = 5 # pin 29
-    GPIO.setup(GreenPin, GPIO.OUT, initial=GPIO.LOW)
-    bluePin = 10 # pin 19
-    GPIO.setup(bluePin, GPIO.OUT, initial=GPIO.LOW)
-    if( isPerson ):
-        # green condition
-        GPIO.output(redPin, GPIO.LOW)
-        GPIO.output(GreenPin, GPIO.HIGH)
-        GPIO.output(bluePin, GPIO.LOW)
-    else:
-        # red condtion
-        GPIO.output(redPin, GPIO.HIGH)
-        GPIO.output(GreenPin, GPIO.LOW)
-        GPIO.output(bluePin, GPIO.LOW)
-    #deadline = 200 # in miliseconds
-    # ENSURE DEADLINE MET, IDK HOW TO DO THIS IN PYTHON
+def ledGreenFunction():
+    GPIO.output(redPin, GPIO.LOW)
+    GPIO.output(GreenPin, GPIO.HIGH)
+    GPIO.output(bluePin, GPIO.LOW)
+    return 1
+
+# Handles the LED
+def ledRedFunction():
+    GPIO.output(redPin, GPIO.HIGH)
+    GPIO.output(GreenPin, GPIO.LOW)
+    GPIO.output(bluePin, GPIO.LOW)
     return 1
 
 def fanFunction():
     # From left to right the inputs of RGB LED are R, Ground, G, B
     fanPin = 19 # pin 35
     GPIO.setup(fanPin, GPIO.OUT, initial=GPIO.LOW)
-    print("Entering Fan")
     GPIO.output(fanPin, GPIO.HIGH)
     #deadline = 200 # in miliseconds
     # ENSURE DEADLINE MET, IDK HOW TO DO THIS IN PYTHON
@@ -181,19 +181,20 @@ def fanFunction():
 print("Starting demo now! Press CTRL+C to exit")
 GPIO.setmode(GPIO.BCM)
 
-print("Before")
-
 # Create the never ending daemon thread
 cam_task = threading.Thread(target=run_camera, daemon=False)
 cam_task.start()
 
-print("After")
-# run_camera()
+redPin = 11  # pin 23
+GPIO.setup(redPin, GPIO.OUT, initial=GPIO.HIGH)
+GreenPin = 5  # pin 29
+GPIO.setup(GreenPin, GPIO.OUT, initial=GPIO.LOW)
+bluePin = 10  # pin 19
+GPIO.setup(bluePin, GPIO.OUT, initial=GPIO.LOW)
 
 # This is where the bulk of the code will go
 while(1):
     if (isPersonDetected):
-        print("Queueing")
         threadList = ["Thread-1", "Thread-2", "Thread-3"]
         taskList = ["Sanitation", "Led", "Alarm"]
         queueLock = threading.Lock()
@@ -201,14 +202,14 @@ while(1):
         threads = []
 
         # Create new threads
-        print(threadList)
+        # print(threadList)
         for tName in threadList:
             thread = myThread(threadID, tName, workQueue)
             thread.start()
             starttime = time.time()
             threads.append(thread)
             threadID += 1
-            print(threadID)
+            # print(threadID)
 
         # Fill the queue
         queueLock.acquire()
@@ -225,8 +226,6 @@ while(1):
         # print("Queue Size: ", workQueue.qsize())
         queueLock.release()
 
-        print("Test4")
-
         # Wait for queue to empty
         print(workQueue.queue)
         while not workQueue.empty():
@@ -234,14 +233,12 @@ while(1):
 
         workQueue.queue.clear()
 
-        print("Test5")
-
         # Notify threads it's time to exit
-        print("TEST")
-        print(starttime)
-        print("Measured Time", time.time())
-        print("Measured Elapsed Time", time.time() - starttime)
-        print("Deadline: ", deadline)
+        # print("TEST")
+        # print(starttime)
+        # print("Measured Time", time.time())
+        # print("Measured Elapsed Time", time.time() - starttime)
+        # print("Deadline: ", deadline)
         while(1):
             if time.time() - starttime > deadline:
                 print("Deadline reached")
@@ -256,9 +253,11 @@ while(1):
         #     q.join()
 
         print("All Task ended")
-        print("Queue Size: ", workQueue.qsize())
-        print(threading.active_count())
+        # print("Queue Size: ", workQueue.qsize())
+        # print(threading.active_count())
         exitFlag = 0
+    else:
+        ledRedFunction()
 
 # if __name__ == '__main__':
 #     #map to the bcm
