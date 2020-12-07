@@ -23,6 +23,9 @@ isPersonDetected = False
 alarmGoing = False
 threadID = 1
 real_time_detect_person = False
+redPin = 11  # pin 23
+GreenPin = 5  # pin 29
+bluePin = 10  # pin 19
 
 # From RT_Task.py
 def process_data(threadName, q):
@@ -41,10 +44,10 @@ def process_data(threadName, q):
                 print("LED STATEMENT")
                 if(real_time_detect_person):
                     print("GREEN STATEMENT")
-                    ledGreenFunction()
+                    ledFunction(0, 1, 0)
                 else:
                     print("RED STATEMENT")
-                    ledRedFunction()
+                    ledFunction(1, 0, 0)
                 q.task_done()
             elif data[1] == "Alarm":
                 alarmFunction()
@@ -54,7 +57,8 @@ def process_data(threadName, q):
         time.sleep(1)
 
 
-
+# Implementation of thread object
+# needed to change the run function which is overridden
 class myThread (threading.Thread):
    def __init__(self, threadID, name, q):
       threading.Thread.__init__(self)
@@ -68,19 +72,20 @@ class myThread (threading.Thread):
 
 
 def run_camera():
-# Create the Camera instance
+    global isPersonDetected
+    global lpd_deadline
+    global last_detected
+    global real_time_detect_person
+
+    # Create the Camera instance
     camera = nano.Camera(camera_type=1, device_id=0, width=640, height=480, fps=30)
     print('USB Camera ready? - ', camera.isReady())
     while camera.isReady():
         try:
             # read the camera image
             frame = camera.read()
-            #detect the person now
-            global isPersonDetected
-            global lpd_deadline
-            global last_detected
-            global real_time_detect_person
 
+            # detect the person now
             if( detectPerson(frame) ):
                 time_now = time.time()
                 real_time_detect_person = True
@@ -96,10 +101,6 @@ def run_camera():
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
 
-            # Definetly want to eventually change this after testing
-            # Should be running on its own thread
-            # if isPersonDetected:
-            #     break
         except KeyboardInterrupt:
             break
 
@@ -152,19 +153,18 @@ def alarmFunction():
 
     return 1
 
-# Handles the LED
-def ledGreenFunction():
-    GPIO.output(redPin, GPIO.LOW)
-    GPIO.output(GreenPin, GPIO.HIGH)
-    GPIO.output(bluePin, GPIO.LOW)
+
+# Handles the LED lights
+def ledFunction(red=0, green=0, blue=0):
+
+    GPIO.output(redPin, GPIO.HIGH) if red else GPIO.output(redPin, GPIO.LOW)
+
+    GPIO.output(GreenPin, GPIO.HIGH) if green else GPIO.output(GreenPin, GPIO.LOW)
+
+    GPIO.output(bluePin, GPIO.HIGH) if blue else GPIO.output(bluePin, GPIO.LOW)
     return 1
 
-# Handles the LED
-def ledRedFunction():
-    GPIO.output(redPin, GPIO.HIGH)
-    GPIO.output(GreenPin, GPIO.LOW)
-    GPIO.output(bluePin, GPIO.LOW)
-    return 1
+
 
 def fanFunction():
     # From left to right the inputs of RGB LED are R, Ground, G, B
@@ -177,25 +177,35 @@ def fanFunction():
 
 
 
-# Main for all intents and purposes
+
 print("Starting demo now! Press CTRL+C to exit")
 GPIO.setmode(GPIO.BCM)
 
-# Create the never ending daemon thread
+# Create camera thread to run by itself
 cam_task = threading.Thread(target=run_camera, daemon=False)
 cam_task.start()
 
-redPin = 11  # pin 23
-GPIO.setup(redPin, GPIO.OUT, initial=GPIO.HIGH)
-GreenPin = 5  # pin 29
-GPIO.setup(GreenPin, GPIO.OUT, initial=GPIO.LOW)
-bluePin = 10  # pin 19
-GPIO.setup(bluePin, GPIO.OUT, initial=GPIO.LOW)
+# initialize the lights to start with red on
+ledFunction(1, 0, 0)
 
-# This is where the bulk of the code will go
+"""
+    Dispatcher process
+    if person is detected: 
+        - create 3 threads, main process takes 1 thread of 4 in Jetson Nano
+            when threads created, start_time is set, used for deadlines
+        - create a que and load with the task to be handled when a person is detected
+            using priority que to give priority to lower assigned value
+            locks que while accessing to prevent race conditions
+        - wait until the queue is empty
+        - wait until the deadline is reached and send signal to kill threads
+        - join all threads so they can exit, reset kill signal to 0
+    
+"""
 while(1):
     if (isPersonDetected):
+        # create list of threads
         threadList = ["Thread-1", "Thread-2", "Thread-3"]
+        # create list of tasks
         taskList = ["Sanitation", "Led", "Alarm"]
         queueLock = threading.Lock()
         workQueue = queue.PriorityQueue(10)
@@ -227,18 +237,12 @@ while(1):
         queueLock.release()
 
         # Wait for queue to empty
-        print(workQueue.queue)
+        # print(workQueue.queue)
         while not workQueue.empty():
             pass
 
-        workQueue.queue.clear()
 
-        # Notify threads it's time to exit
-        # print("TEST")
-        # print(starttime)
-        # print("Measured Time", time.time())
-        # print("Measured Elapsed Time", time.time() - starttime)
-        # print("Deadline: ", deadline)
+        # Notify threads it's time to exit if deadline passed
         while(1):
             if time.time() - starttime > deadline:
                 print("Deadline reached")
@@ -249,72 +253,12 @@ while(1):
         # Wait for all threads to complete
         for t in threads:
             t.join()
-        # for q in workQueue:
-        #     q.join()
 
         print("All Task ended")
         # print("Queue Size: ", workQueue.qsize())
         # print(threading.active_count())
         exitFlag = 0
+    # person not detected, set light to red
     else:
-        ledRedFunction()
+        ledFunction(1, 0, 0)
 
-# if __name__ == '__main__':
-#     #map to the bcm
-#     GPIO.setmode(GPIO.BCM)
-#     #run the camera
-#     run_camera()
-#     print("Starting demo now! Press CTRL+C to exit")
-#     ledFunction()
-
-
-    # alarmFunction()
-    # fanFunction()
-
-    # try:
-    #     while True:
-    #         time.sleep(1)
-    #         # Toggle the output every second
-    #         print("Outputting {} to pin {}".format(curr_value, output_pin))
-    #         GPIO.output(output_pin, curr_value)
-    #         curr_value ^= GPIO.HIGH
-    # finally:
-    #     GPIO.cleanup()
-
-
-# PSUEDOCODE:
-
-# def main():
-
-    # humanDetected = false
-    # feed = DeepSteam(webcamInput) # Get michael to do this part and get the feed as a variable
-    # humanDetected = tensorflow.process(feed) # Will return true if human in frame (hopefully tensorflow has built in functions)
-
-    # def rtPeriodicTask(humanDetected):
-    #     if humanDetected:
-    #         pthread taskThread
-    #         pthread_create taskThread
-    #         pthread_join(taskThread, deadLineTask)
-    #     schedule(500) # Repeat task every so often as needed
-    #
-    # # Creates threads for all jobs, joins threads for all jobs
-    # def deadLineTask():
-    #     jobThread1 = dispatchChildThread()
-    #     jobThread2 = dispatchChildThread()
-    #     jobThread3 = dispatchChildThread()
-    #     pthread_join(jobThread1, alarmFunction)
-    #     pthread_join(jobThread2, ledFunction)
-    #     pthread_join(jobThread3, fanFunction)
-
-# Handles the alarm
-
-
-
-#
-# # Handles the fan
-# def fanFunction:
-#     output_pin = 7 # change as necessary
-#     deadline = 200 # in miliseconds
-#     # ENSURE DEADLINE MET, IDK HOW TO DO THIS IN PYTHON
-#     GPIO.output(output_pin, GPIO.HIGH)
-#     return 1
