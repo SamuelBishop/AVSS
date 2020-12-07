@@ -65,11 +65,19 @@ def detectPerson(frame):
         return False
 
 def alarmFunction():
-    outputPin = 6 # pin 38
+    outputPin = 6 # pin 31
     GPIO.setup(outputPin, GPIO.OUT, initial=GPIO.HIGH)
     # GPIO.setup(outputPin, GPIO.OUT, initial=GPIO.HIGH)
     # deadline = 100 # in miliseconds
     # ENSURE DEADLINE MET, IDK HOW TO DO THIS IN PYTHON
+
+    print("TEST")
+
+    # while(1):
+    #     GPIO.output(outputPin, GPIO.HIGH)
+    #     time.sleep(1)
+    #     GPIO.output(outputPin, GPIO.LOW)
+    #     time.sleep(1)
 
     while(1):
         GPIO.output(outputPin, GPIO.HIGH)
@@ -77,17 +85,10 @@ def alarmFunction():
         GPIO.output(outputPin, GPIO.LOW)
         time.sleep(.0001)  # change as necessary
 
-    # while(1):
-    #     # if(shouldExit): # figure this out for python
-    #     #     exit();
-    #     GPIO.output(outputPin, GPIO.HIGH)
-    #     time.sleep(1) # change as necessary
-    #     GPIO.output(outputPin, GPIO.LOW)
-    #     time.sleep(1) # change as necessary
     return 1
 
 # Handles the LED
-def ledFunction():
+def ledFunction(isPerson):
     # From left to right the inputs of RGB LED are R, Ground, G, B
     redPin = 11 # pin 23
     GPIO.setup(redPin, GPIO.OUT, initial=GPIO.LOW)
@@ -95,7 +96,7 @@ def ledFunction():
     GPIO.setup(GreenPin, GPIO.OUT, initial=GPIO.LOW)
     bluePin = 10 # pin 19
     GPIO.setup(bluePin, GPIO.OUT, initial=GPIO.LOW)
-    if( False ):
+    if( isPerson ):
         # green condition
         GPIO.output(redPin, GPIO.LOW)
         GPIO.output(GreenPin, GPIO.HIGH)
@@ -109,20 +110,25 @@ def ledFunction():
     # ENSURE DEADLINE MET, IDK HOW TO DO THIS IN PYTHON
     return 1
 
+def fanFunction():
+    # From left to right the inputs of RGB LED are R, Ground, G, B
+    fanPin = 16 # pin 36
+    GPIO.setup(fanPin, GPIO.OUT, initial=GPIO.LOW)
+    GPIO.output(fanPin, GPIO.HIGH)
+    #deadline = 200 # in miliseconds
+    # ENSURE DEADLINE MET, IDK HOW TO DO THIS IN PYTHON
+    return 1
+
 if __name__ == '__main__':
-    # Pin Setup:
-    # Board pin-numbering scheme
+    #map to the bcm
     GPIO.setmode(GPIO.BCM)
-    # set pin as an output pin with optional initial state of HIGH
-    # GPIO.setup(output_pin, GPIO.OUT, initial=GPIO.HIGH)
     #run the camera
     run_camera()
-
     print("Starting demo now! Press CTRL+C to exit")
-    # ledFunction()
-    alarmFunction()
+    ledFunction()
+    # alarmFunction()
+    # fanFunction()
 
-    # curr_value = GPIO.HIGH
     # try:
     #     while True:
     #         time.sleep(1)
